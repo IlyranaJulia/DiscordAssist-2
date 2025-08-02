@@ -16,22 +16,40 @@ export default function LandingPage() {
     setError(null);
     
     try {
-      const response = await fetch('/api/auth/test', {
+      // Get Discord OAuth URL
+      const response = await fetch('/api/auth/discord', {
         method: 'GET',
         credentials: 'include'
       });
       
       const data = await response.json();
       
-      if (data.success) {
-        setAuthStatus('success');
-        // Redirect to dashboard after 2 seconds
-        setTimeout(() => {
-          setLocation('/dashboard');
-        }, 2000);
+      if (data.authUrl) {
+        // Open Discord OAuth in a popup window
+        const popup = window.open(data.authUrl, 'discord-auth', 'width=500,height=600');
+        
+        // Listen for the OAuth result
+        const handleMessage = (event: MessageEvent) => {
+          if (event.data.type === 'DISCORD_AUTH_SUCCESS') {
+            setAuthStatus('success');
+            popup?.close();
+            // Redirect to dashboard after 2 seconds
+            setTimeout(() => {
+              setLocation('/dashboard');
+            }, 2000);
+            window.removeEventListener('message', handleMessage);
+          } else if (event.data.type === 'DISCORD_AUTH_ERROR') {
+            setAuthStatus('error');
+            setError(event.data.error || 'Discord authentication failed');
+            popup?.close();
+            window.removeEventListener('message', handleMessage);
+          }
+        };
+        
+        window.addEventListener('message', handleMessage);
       } else {
         setAuthStatus('error');
-        setError(data.error || 'Authentication failed');
+        setError('Failed to get Discord authentication URL');
       }
     } catch (error) {
       setAuthStatus('error');
@@ -110,10 +128,10 @@ export default function LandingPage() {
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Authenticating...
+                    Connecting to Discord...
                   </>
                 ) : (
-                  'Start Using DiscordAssist'
+                  'Login with Discord'
                 )}
               </Button>
               
