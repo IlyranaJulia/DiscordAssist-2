@@ -4,18 +4,18 @@ import { useLocation } from "wouter";
 import { StatsGrid } from "@/components/dashboard/stats-grid";
 import { BotConfigCard } from "@/components/dashboard/bot-config-card";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
-import { AddBotModal } from "@/components/modals/add-bot-modal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bot, Plus, Settings, Server } from "lucide-react";
+import { Bot, Settings, Server, ExternalLink, Copy } from "lucide-react";
 import { useState } from "react";
 import type { BotConfig } from "@shared/schema";
 
 export default function Dashboard() {
   const { isAuthenticated, user } = useAuth();
   const [, setLocation] = useLocation();
-  const [showAddModal, setShowAddModal] = useState(false);
+  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
@@ -26,6 +26,19 @@ export default function Dashboard() {
   const { data: botConfigs, isLoading: configsLoading } = useQuery<BotConfig[]>({
     queryKey: ["/api/bot-configs"],
   });
+
+  const { data: inviteData } = useQuery({
+    queryKey: ["/api/bot/invite"],
+    enabled: isAuthenticated,
+  });
+
+  const copyInviteLink = async () => {
+    if (inviteData?.inviteUrl) {
+      await navigator.clipboard.writeText(inviteData.inviteUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   if (configsLoading) {
     return (
@@ -52,23 +65,66 @@ export default function Dashboard() {
           <Settings className="mr-3 text-indigo-600 h-8 w-8" />
           Dashboard
         </h1>
-        <p className="text-muted-foreground">Manage your Discord support bots and configurations</p>
+        <p className="text-muted-foreground">Configure your DiscordAssist bot policies and settings</p>
       </div>
 
       {/* Quick Stats */}
       <StatsGrid />
 
+      {/* Bot Invite Section */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Bot className="mr-2 text-indigo-600 h-5 w-5" />
+            Invite Bot to Your Server
+          </CardTitle>
+        </CardHeader>
+        
+        <CardContent>
+          <div className="space-y-4">
+            <p className="text-muted-foreground">
+              Use the DiscordAssist bot in your server by inviting it with the link below.
+            </p>
+            
+            {inviteData?.inviteUrl && (
+              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                <input
+                  type="text"
+                  value={inviteData.inviteUrl}
+                  readOnly
+                  className="flex-1 bg-transparent text-sm"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={copyInviteLink}
+                  className="flex items-center gap-2"
+                >
+                  <Copy className="h-4 w-4" />
+                  {copied ? "Copied!" : "Copy"}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => window.open(inviteData.inviteUrl, '_blank')}
+                  className="flex items-center gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Open
+                </Button>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Bot Configurations */}
       <Card className="mb-8">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle className="flex items-center">
             <Server className="mr-2 text-indigo-600 h-5 w-5" />
-            Your Bot Configurations
+            Bot Configuration
           </CardTitle>
-          <Button onClick={() => setShowAddModal(true)} className="font-medium">
-            <Plus className="mr-2 h-4 w-4" />
-            Add New Bot
-          </Button>
         </CardHeader>
         
         <CardContent>
@@ -81,14 +137,10 @@ export default function Dashboard() {
           ) : (
             <div className="text-center py-16">
               <Bot className="text-muted-foreground h-16 w-16 mx-auto mb-6" />
-              <h3 className="text-xl font-medium mb-3">No bots configured yet</h3>
+              <h3 className="text-xl font-medium mb-3">No bot configuration found</h3>
               <p className="text-muted-foreground mb-8 max-w-md mx-auto">
-                Create your first Discord support bot configuration to get started with AI-powered customer support.
+                Contact the bot administrator to set up your configuration.
               </p>
-              <Button onClick={() => setShowAddModal(true)} className="font-medium">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Your First Bot
-              </Button>
             </div>
           )}
         </CardContent>
@@ -96,9 +148,6 @@ export default function Dashboard() {
 
       {/* Recent Activity */}
       <RecentActivity />
-
-      {/* Add Bot Modal */}
-      <AddBotModal open={showAddModal} onOpenChange={setShowAddModal} />
     </div>
   );
 }

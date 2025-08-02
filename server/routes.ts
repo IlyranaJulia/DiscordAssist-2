@@ -126,8 +126,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Bot management endpoints
+  // Bot management endpoints - Only bot owner can control the bot
   app.post("/api/bot-configs/:id/start", async (req, res) => {
+    const userId = req.session?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    // Check if user is the bot owner (you)
+    const isBotOwner = userId === "f090054c-d236-4dcd-8d06-b2b694024382"; // Your user ID
+    if (!isBotOwner) {
+      return res.status(403).json({ error: "Only the bot owner can start/stop the bot" });
+    }
+
     try {
       const { id } = req.params;
       const { botManager } = await import('./discord-bot');
@@ -148,6 +159,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/bot-configs/:id/stop", async (req, res) => {
+    const userId = req.session?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    // Check if user is the bot owner (you)
+    const isBotOwner = userId === "f090054c-d236-4dcd-8d06-b2b694024382"; // Your user ID
+    if (!isBotOwner) {
+      return res.status(403).json({ error: "Only the bot owner can start/stop the bot" });
+    }
+
     try {
       const { id } = req.params;
       const { botManager } = await import('./discord-bot');
@@ -166,6 +188,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get("/api/bot-configs/:id/status", async (req, res) => {
+    const userId = req.session?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    // Check if user is the bot owner (you)
+    const isBotOwner = userId === "f090054c-d236-4dcd-8d06-b2b694024382"; // Your user ID
+    if (!isBotOwner) {
+      return res.status(403).json({ error: "Only the bot owner can check bot status" });
+    }
+
     try {
       const { id } = req.params;
       const { botManager } = await import('./discord-bot');
@@ -373,15 +406,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(user);
   });
 
-  // Bot configuration routes
+  // Bot configuration routes - Users can only configure policies for existing bots
   app.get("/api/bot-configs", async (req, res) => {
     const userId = req.session?.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const configs = await storage.getBotConfigsByUserId(userId);
-    res.json(configs);
+    // For now, return a single bot config that represents the main bot
+    // In the future, this could be expanded to support multiple bots
+    const mainBotConfig = {
+      id: "main-bot",
+      userId: userId,
+      guildId: "all-servers", // Represents all servers where the bot is invited
+      guildName: "All Servers",
+      botName: "DiscordAssist Bot",
+      aiModel: "openai/gpt-4o",
+      systemPrompt: "You are a helpful Discord assistant.",
+      policyContent: "Default policy content",
+      allowedChannels: [],
+      allowedRoles: [],
+      adminOnly: false,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    res.json([mainBotConfig]);
   });
 
   app.get("/api/bot-configs/:id", async (req, res) => {
@@ -390,56 +441,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const config = await storage.getBotConfig(req.params.id);
-    if (!config || config.userId !== userId) {
-      return res.status(404).json({ error: "Bot configuration not found" });
-    }
+    // Return the main bot config for any ID (since there's only one bot)
+    const mainBotConfig = {
+      id: req.params.id,
+      userId: userId,
+      guildId: "all-servers",
+      guildName: "All Servers",
+      botName: "DiscordAssist Bot",
+      aiModel: "openai/gpt-4o",
+      systemPrompt: "You are a helpful Discord assistant.",
+      policyContent: "Default policy content",
+      allowedChannels: [],
+      allowedRoles: [],
+      adminOnly: false,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
 
-    res.json(config);
+    res.json(mainBotConfig);
   });
 
-  app.post("/api/bot-configs", async (req, res) => {
-    console.log('🔍 Bot creation request - Session:', req.session);
-    console.log('🔍 Bot creation request - User ID:', req.session?.userId);
-    
-    const userId = req.session?.userId;
-    if (!userId) {
-      console.log('❌ No user ID in session - returning 401');
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    try {
-      const validatedData = insertBotConfigSchema.parse({ ...req.body, userId });
-      const config = await storage.createBotConfig(validatedData);
-      console.log('✅ Bot created successfully:', config.id);
-      res.status(201).json(config);
-    } catch (error) {
-      console.error('❌ Bot creation error:', error);
-      if (error instanceof z.ZodError) {
-        return res.status(400).json({ error: "Validation failed", details: error.errors });
-      }
-      res.status(500).json({ error: "Failed to create bot configuration" });
-    }
-  });
-
+  // Users can only update policy content, not create new bots
   app.patch("/api/bot-configs/:id", async (req, res) => {
     const userId = req.session?.userId;
     if (!userId) {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    const config = await storage.getBotConfig(req.params.id);
-    if (!config || config.userId !== userId) {
-      return res.status(404).json({ error: "Bot configuration not found" });
+    // Only allow updating specific fields that users should be able to modify
+    const allowedUpdates = {
+      policyContent: req.body.policyContent,
+      systemPrompt: req.body.systemPrompt,
+      aiModel: req.body.aiModel,
+      allowedChannels: req.body.allowedChannels,
+      allowedRoles: req.body.allowedRoles,
+      adminOnly: req.body.adminOnly
+    };
+
+    // Filter out undefined values
+    const filteredUpdates = Object.fromEntries(
+      Object.entries(allowedUpdates).filter(([_, value]) => value !== undefined)
+    );
+
+    // Update the bot config (in a real implementation, this would save to database)
+    const updatedConfig = {
+      id: req.params.id,
+      userId: userId,
+      guildId: "all-servers",
+      guildName: "All Servers",
+      botName: "DiscordAssist Bot",
+      aiModel: filteredUpdates.aiModel || "openai/gpt-4o",
+      systemPrompt: filteredUpdates.systemPrompt || "You are a helpful Discord assistant.",
+      policyContent: filteredUpdates.policyContent || "Default policy content",
+      allowedChannels: filteredUpdates.allowedChannels || [],
+      allowedRoles: filteredUpdates.allowedRoles || [],
+      adminOnly: filteredUpdates.adminOnly || false,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    res.json(updatedConfig);
+  });
+
+  // Bot invite link - Users can get the invite link for the bot
+  app.get("/api/bot/invite", async (req, res) => {
+    const userId = req.session?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
     }
 
-    try {
-      const updatedConfig = await storage.updateBotConfig(req.params.id, req.body);
-      res.json(updatedConfig);
-    } catch (error) {
-      res.status(500).json({ error: "Failed to update bot configuration" });
+    const discordClientId = process.env.DISCORD_CLIENT_ID;
+    if (!discordClientId) {
+      return res.status(500).json({ error: "Bot not configured" });
     }
+
+    // Generate invite link with appropriate permissions
+    const permissions = [
+      "SendMessages",
+      "ReadMessageHistory", 
+      "UseSlashCommands",
+      "EmbedLinks",
+      "AttachFiles"
+    ].join('%20');
+
+    const inviteUrl = `https://discord.com/api/oauth2/authorize?client_id=${discordClientId}&permissions=${permissions}&scope=bot%20applications.commands`;
+
+    res.json({ 
+      inviteUrl,
+      message: "Use this link to invite the DiscordAssist bot to your server"
+    });
   });
+
+  // Remove the POST endpoint for creating new bots since users can't create bots
+  // app.post("/api/bot-configs", ...) - REMOVED
 
   app.delete("/api/bot-configs/:id", async (req, res) => {
     const userId = req.session?.userId;

@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLocation } from "wouter";
-import { Bot, Brain, Clock, Hash, Eye, Edit } from "lucide-react";
+import { Bot, Brain, Clock, Hash, Eye, Edit, Settings } from "lucide-react";
 import type { BotConfig } from "@shared/schema";
 
 interface BotConfigCardProps {
@@ -21,7 +21,7 @@ export function BotConfigCard({ config }: BotConfigCardProps) {
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center mb-3">
-            <h3 className="text-lg font-semibold mr-3">{config.guildName}</h3>
+            <h3 className="text-lg font-semibold mr-3">{config.botName}</h3>
             {config.isActive ? (
               <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
                 <CheckCircle className="mr-1 h-3 w-3" />
@@ -37,14 +37,10 @@ export function BotConfigCard({ config }: BotConfigCardProps) {
           
           <p className="text-sm text-muted-foreground mb-3 flex items-center">
             <Hash className="mr-1 h-3 w-3" />
-            Guild ID: {config.guildId}
+            Available in all servers where invited
           </p>
           
           <div className="flex items-center space-x-6 text-sm text-muted-foreground">
-            <span className="flex items-center">
-              <Bot className="mr-2 h-4 w-4" />
-              {config.botName}
-            </span>
             <span className="flex items-center">
               <Brain className="mr-2 h-4 w-4" />
               {config.aiModel}
@@ -69,8 +65,8 @@ export function BotConfigCard({ config }: BotConfigCardProps) {
             onClick={() => setLocation(`/bot/${config.id}`)}
             size="sm"
           >
-            <Edit className="mr-1 h-4 w-4" />
-            Edit
+            <Settings className="mr-1 h-4 w-4" />
+            Configure
           </Button>
         </div>
       </div>
