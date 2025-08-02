@@ -1,0 +1,105 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: hsl(0, 0%, 100%);
+  --foreground: hsl(20, 14.3%, 4.1%);
+  --muted: hsl(60, 4.8%, 95.9%);
+  --muted-foreground: hsl(25, 5.3%, 44.7%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(20, 14.3%, 4.1%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(20, 14.3%, 4.1%);
+  --border: hsl(20, 5.9%, 90%);
+  --input: hsl(20, 5.9%, 90%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(60, 4.8%, 95.9%);
+  --secondary-foreground: hsl(24, 9.8%, 10%);
+  --accent: hsl(60, 4.8%, 95.9%);
+  --accent-foreground: hsl(24, 9.8%, 10%);
+  --destructive: hsl(0, 84.2%, 60.2%);
+  --destructive-foreground: hsl(60, 9.1%, 97.8%);
+  --ring: hsl(20, 14.3%, 4.1%);
+  --radius: 0.5rem;
+  --discord: hsl(235, 86%, 65%);
+  --discord-foreground: hsl(0, 0%, 100%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+  --radius: 0.5rem;
+  --discord: hsl(235, 86%, 65%);
+  --discord-foreground: hsl(0, 0%, 100%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .discord-button {
+    @apply bg-[hsl(235,86%,65%)] hover:bg-[hsl(235,86%,60%)] text-white;
+  }
+
+  .gradient-hero {
+    @apply bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600;
+  }
+
+  .stat-card {
+    @apply bg-white dark:bg-card p-6 rounded-xl shadow-md border border-gray-100 dark:border-border;
+  }
+
+  .feature-card {
+    @apply bg-white dark:bg-card p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow border border-gray-100 dark:border-border;
+  }
+
+  .nav-link {
+    @apply border-b-2 pb-4 px-1 text-sm font-medium transition-colors;
+  }
+
+  .nav-link-active {
+    @apply text-primary border-primary;
+  }
+
+  .nav-link-inactive {
+    @apply text-muted-foreground border-transparent hover:text-foreground;
+  }
+
+  .tab-button {
+    @apply whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors;
+  }
+
+  .tab-button-active {
+    @apply border-primary text-primary;
+  }
+
+  .tab-button-inactive {
+    @apply border-transparent text-muted-foreground hover:text-foreground hover:border-border;
+  }
+}
