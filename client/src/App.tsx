@@ -7,6 +7,7 @@ import { Navigation } from "@/components/ui/navigation";
 import LandingPage from "@/pages/landing";
 import Dashboard from "@/pages/dashboard";
 import BotDetail from "@/pages/bot-detail";
+import TestAuth from "@/pages/test-auth";
 import NotFound from "@/pages/not-found";
 import { useEffect } from "react";
 
@@ -31,6 +32,7 @@ function Router() {
           <Route path="/" component={LandingPage} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/bot/:id" component={BotDetail} />
+          <Route path="/test-auth" component={TestAuth} />
           <Route component={NotFound} />
         </Switch>
       </main>
