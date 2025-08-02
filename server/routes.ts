@@ -409,24 +409,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    // For now, return a single bot config that represents the main bot
-    // In the future, this could be expanded to support multiple bots
-    const mainBotConfig = {
-      id: "main-bot",
-      userId: userId,
-      guildId: "all-servers", // Represents all servers where the bot is invited
-      guildName: "All Servers",
-      botName: "DiscordAssist Bot",
-      aiModel: "openai/gpt-4o",
-      systemPrompt: "You are a helpful Discord assistant.",
-      policyContent: "Default policy content",
-      allowedChannels: [],
-      allowedRoles: [],
-      adminOnly: false,
-      isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
+    // Get or create the main bot config from storage
+    let mainBotConfig = await storage.getBotConfig("main-bot");
+    
+    if (!mainBotConfig) {
+      // Create the main bot config if it doesn't exist
+      mainBotConfig = await storage.createBotConfig({
+        userId: userId,
+        guildId: "all-servers",
+        guildName: "All Servers",
+        botName: "DiscordAssist Bot",
+        aiModel: "openai/gpt-4o",
+        systemPrompt: "You are a helpful Discord assistant that provides intelligent responses based on the server's policies.",
+        policyContent: "Default policy: Be helpful, respectful, and follow Discord's community guidelines.",
+        allowedChannels: [],
+        allowedRoles: [],
+        adminOnly: false,
+        isActive: true
+      });
+    }
 
     res.json([mainBotConfig]);
   });
@@ -499,6 +500,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     };
 
     res.json(updatedConfig);
+  });
+
+  // Bot status endpoint
+  app.get("/api/bot/status", async (req, res) => {
+    const userId = req.session?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    const botToken = process.env.DISCORD_BOT_TOKEN;
+    const clientId = process.env.DISCORD_CLIENT_ID;
+    
+    res.json({
+      configured: {
+        botToken: !!botToken,
+        clientId: !!clientId,
+        sessionSecret: !!process.env.SESSION_SECRET
+      },
+      message: botToken && clientId 
+        ? "Bot is configured. Use the invite link to add it to your server."
+        : "Bot needs configuration. Set DISCORD_BOT_TOKEN and DISCORD_CLIENT_ID environment variables."
+    });
   });
 
   // Bot invite link - Users can get the invite link for the bot

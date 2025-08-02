@@ -24,7 +24,7 @@ export function getConfig(): Config {
   const openrouterApiKey = process.env.OPENROUTER_API_KEY;
 
   // Determine storage type based on environment
-  let storageType: 'memory' | 'sqlite' | 'postgresql' = 'memory';
+  let storageType: 'memory' | 'sqlite' | 'postgresql' = 'sqlite'; // Default to SQLite for persistence
   
   if (databaseUrl) {
     if (databaseUrl.includes('postgresql://') || databaseUrl.includes('postgres://')) {
@@ -33,7 +33,7 @@ export function getConfig(): Config {
       storageType = 'sqlite';
     }
   } else {
-    // If no DATABASE_URL, default to SQLite for local development
+    // If no DATABASE_URL, default to SQLite for persistence
     storageType = 'sqlite';
   }
 
