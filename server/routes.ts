@@ -4,6 +4,13 @@ import { createStorage } from "./config";
 import { insertBotConfigSchema, insertCommandLogSchema, insertUserReviewSchema } from "@shared/schema";
 import { z } from "zod";
 
+// Extend the session interface to include userId
+declare module 'express-session' {
+  interface SessionData {
+    userId?: string;
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   const storage = createStorage();
   
@@ -30,6 +37,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Temporary bypass for testing (remove this in production)
   app.get("/api/auth/test", async (req, res) => {
     try {
+      console.log('🔍 Test auth request - Session before:', req.session);
+      
       // Check if test user already exists
       let testUser = await storage.getUserByDiscordId("test_user_123");
       
@@ -49,7 +58,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Store user session
-      req.session.userId = testUser.id;
+      if (testUser) {
+        req.session.userId = testUser.id;
+        console.log('🔍 Test auth - Setting session userId:', testUser.id);
+        console.log('🔍 Test auth - Session after setting:', req.session);
+      }
 
       res.json({ 
         success: true, 
@@ -98,7 +111,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Store user session
-      req.session.userId = user.id;
+      if (user) {
+        req.session.userId = user.id;
+      }
 
       res.json({ 
         success: true, 
@@ -384,16 +399,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/bot-configs", async (req, res) => {
+    console.log('🔍 Bot creation request - Session:', req.session);
+    console.log('🔍 Bot creation request - User ID:', req.session?.userId);
+    
     const userId = req.session?.userId;
     if (!userId) {
+      console.log('❌ No user ID in session - returning 401');
       return res.status(401).json({ error: "Not authenticated" });
     }
 
     try {
       const validatedData = insertBotConfigSchema.parse({ ...req.body, userId });
       const config = await storage.createBotConfig(validatedData);
+      console.log('✅ Bot created successfully:', config.id);
       res.status(201).json(config);
     } catch (error) {
+      console.error('❌ Bot creation error:', error);
       if (error instanceof z.ZodError) {
         return res.status(400).json({ error: "Validation failed", details: error.errors });
       }
