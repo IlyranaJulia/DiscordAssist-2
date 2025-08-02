@@ -37,8 +37,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Temporary bypass for testing (remove this in production)
   app.get("/api/auth/test", async (req, res) => {
     try {
-      console.log('🔍 Test auth request - Session before:', req.session);
-      
       // Check if test user already exists
       let testUser = await storage.getUserByDiscordId("test_user_123");
       
@@ -60,8 +58,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Store user session
       if (testUser) {
         req.session.userId = testUser.id;
-        console.log('🔍 Test auth - Setting session userId:', testUser.id);
-        console.log('🔍 Test auth - Session after setting:', req.session);
       }
 
       res.json({ 
