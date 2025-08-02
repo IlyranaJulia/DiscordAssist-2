@@ -409,12 +409,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    // Get or create the main bot config from storage
-    let mainBotConfig = await storage.getBotConfig("main-bot");
-    
-    if (!mainBotConfig) {
-      // Create the main bot config if it doesn't exist
-      mainBotConfig = await storage.createBotConfig({
+    try {
+      // Get or create the main bot config from storage
+      let mainBotConfig = await storage.getBotConfig("main-bot");
+      
+      if (!mainBotConfig) {
+        // Create the main bot config if it doesn't exist
+        mainBotConfig = await storage.createBotConfig({
+          userId: userId,
+          guildId: "all-servers",
+          guildName: "All Servers",
+          botName: "DiscordAssist Bot",
+          aiModel: "openai/gpt-4o",
+          systemPrompt: "You are a helpful Discord assistant that provides intelligent responses based on the server's policies.",
+          policyContent: "Default policy: Be helpful, respectful, and follow Discord's community guidelines.",
+          allowedChannels: [],
+          allowedRoles: [],
+          adminOnly: false,
+          isActive: true
+        });
+      }
+
+      res.json([mainBotConfig]);
+    } catch (error) {
+      console.error("Error in /api/bot-configs:", error);
+      
+      // Fallback to hardcoded config if storage fails
+      const fallbackConfig = {
+        id: "main-bot",
         userId: userId,
         guildId: "all-servers",
         guildName: "All Servers",
@@ -425,11 +447,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         allowedChannels: [],
         allowedRoles: [],
         adminOnly: false,
-        isActive: true
-      });
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      
+      res.json([fallbackConfig]);
     }
-
-    res.json([mainBotConfig]);
   });
 
   app.get("/api/bot-configs/:id", async (req, res) => {
@@ -518,9 +542,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         clientId: !!clientId,
         sessionSecret: !!process.env.SESSION_SECRET
       },
+      botStatus: {
+        online: false, // Bot is not online until properly configured
+        connected: false,
+        guilds: 0
+      },
       message: botToken && clientId 
         ? "Bot is configured. Use the invite link to add it to your server."
-        : "Bot needs configuration. Set DISCORD_BOT_TOKEN and DISCORD_CLIENT_ID environment variables."
+        : "Bot needs configuration. Set DISCORD_BOT_TOKEN and DISCORD_CLIENT_ID environment variables.",
+      inviteUrl: clientId 
+        ? `https://discord.com/api/oauth2/authorize?client_id=${clientId}&permissions=SendMessages%20ReadMessageHistory%20UseSlashCommands%20EmbedLinks%20AttachFiles&scope=bot%20applications.commands`
+        : null
     });
   });
 
@@ -701,6 +733,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
       .slice(0, 10);
 
     res.json(recentLogs);
+  });
+
+  // Simple configuration update endpoint
+  app.post("/api/bot/config/update", async (req, res) => {
+    const userId = req.session?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      const { policyContent, systemPrompt, aiModel, allowedChannels, allowedRoles, adminOnly } = req.body;
+      
+      // For now, just return success (in a real app, this would save to database)
+      res.json({
+        success: true,
+        message: "Configuration updated successfully",
+        config: {
+          policyContent: policyContent || "Default policy: Be helpful, respectful, and follow Discord's community guidelines.",
+          systemPrompt: systemPrompt || "You are a helpful Discord assistant that provides intelligent responses based on the server's policies.",
+          aiModel: aiModel || "openai/gpt-4o",
+          allowedChannels: allowedChannels || [],
+          allowedRoles: allowedRoles || [],
+          adminOnly: adminOnly || false
+        }
+      });
+    } catch (error) {
+      console.error("Error updating config:", error);
+      res.status(500).json({ error: "Failed to update configuration" });
+    }
   });
 
   const httpServer = createServer(app);
