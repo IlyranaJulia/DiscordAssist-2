@@ -58,11 +58,6 @@ async function startServer() {
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static('client/dist'));
     
-    // Serve test-auth page directly
-    app.get('/test-auth', (req, res) => {
-      res.sendFile('test-auth.html', { root: 'client/public' });
-    });
-    
     // Serve index.html for all remaining routes (SPA routing)
     app.get('*', (req, res) => {
       res.sendFile('index.html', { root: 'client/dist' });

@@ -76,11 +76,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendFile('manual-auth.html', { root: './client/public' });
   });
 
-  // Test authentication page
-  app.get("/test-auth", (req, res) => {
-    res.sendFile('test-auth.html', { root: './client/public' });
-  });
-
   app.post("/api/auth/manual", async (req, res) => {
     try {
       const { discordId, username, email } = req.body;
