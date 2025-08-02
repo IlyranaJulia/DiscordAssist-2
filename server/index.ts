@@ -49,14 +49,19 @@ if (process.env.NODE_ENV === 'development') {
 
 // Start the server
 async function startServer() {
-  // Register API routes
+  // Register API routes first
   const server = await registerRoutes(app);
 
-  // Serve static files in production
+  // Serve static files in production (after API routes)
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static('client/dist'));
     
-    // Serve index.html for all routes (SPA routing)
+    // Serve test-auth page directly
+    app.get('/test-auth', (req, res) => {
+      res.sendFile('test-auth.html', { root: 'client/public' });
+    });
+    
+    // Serve index.html for all remaining routes (SPA routing)
     app.get('*', (req, res) => {
       res.sendFile('index.html', { root: 'client/dist' });
     });
