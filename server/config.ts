@@ -71,12 +71,15 @@ export function validateConfig(): string[] {
   const config = getConfig();
   const errors: string[] = [];
 
-  if (!config.discordClientId) {
-    errors.push('DISCORD_CLIENT_ID is required');
-  }
+  // Only require Discord credentials in production
+  if (process.env.NODE_ENV === 'production') {
+    if (!config.discordClientId) {
+      errors.push('DISCORD_CLIENT_ID is required');
+    }
 
-  if (!config.discordClientSecret) {
-    errors.push('DISCORD_CLIENT_SECRET is required');
+    if (!config.discordClientSecret) {
+      errors.push('DISCORD_CLIENT_SECRET is required');
+    }
   }
 
   if (config.sessionSecret === 'fallback-secret-change-in-production') {
