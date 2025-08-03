@@ -598,6 +598,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json({ success: true, message: "POST endpoint working" });
   });
 
+  // Test GET route to same path
+  app.get("/api/test-post", (req, res) => {
+    res.json({ success: true, message: "GET endpoint working" });
+  });
+
   // Bot invite link - Users can get the invite link for the bot
   app.get("/api/bot/invite", async (req, res) => {
     const userId = req.session?.userId;
