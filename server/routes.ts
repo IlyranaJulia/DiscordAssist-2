@@ -76,6 +76,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendFile('manual-auth.html', { root: './client/public' });
   });
 
+  // Start bot endpoint - Register this early to avoid conflicts
+  app.post("/api/bot/start", async (req, res) => {
+    const userId = req.session?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      // Import the bot manager
+      const { botManager } = await import('./discord-bot');
+      
+      // Start the main bot
+      const success = await botManager.startBot("main-bot");
+      
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: "Bot started successfully",
+          status: "online"
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "Failed to start bot",
+          status: "offline"
+        });
+      }
+    } catch (error) {
+      console.error("Error starting bot:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Error starting bot",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   app.post("/api/auth/manual", async (req, res) => {
     try {
       const { discordId, username, email } = req.body;
@@ -554,43 +591,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? `https://discord.com/api/oauth2/authorize?client_id=${clientId}&permissions=SendMessages%20ReadMessageHistory%20UseSlashCommands%20EmbedLinks%20AttachFiles&scope=bot%20applications.commands`
         : null
     });
-  });
-
-  // Start bot endpoint
-  app.post("/api/bot/start", async (req, res) => {
-    const userId = req.session?.userId;
-    if (!userId) {
-      return res.status(401).json({ error: "Not authenticated" });
-    }
-
-    try {
-      // Import the bot manager
-      const { botManager } = await import('./discord-bot');
-      
-      // Start the main bot
-      const success = await botManager.startBot("main-bot");
-      
-      if (success) {
-        res.json({ 
-          success: true, 
-          message: "Bot started successfully",
-          status: "online"
-        });
-      } else {
-        res.status(500).json({ 
-          success: false, 
-          message: "Failed to start bot",
-          status: "offline"
-        });
-      }
-    } catch (error) {
-      console.error("Error starting bot:", error);
-      res.status(500).json({ 
-        success: false, 
-        message: "Error starting bot",
-        error: error instanceof Error ? error.message : "Unknown error"
-      });
-    }
   });
 
   // Test endpoint to check if POST routes are working
