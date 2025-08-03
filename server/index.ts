@@ -64,7 +64,7 @@ async function startServer() {
       // Serve static files from the correct build directory
       app.use(express.static('client/dist'));
       
-      // Serve index.html for all remaining routes (SPA routing)
+      // Serve index.html for all remaining GET routes (SPA routing)
       app.get('*', (req, res) => {
         console.log(`📄 Serving index.html for route: ${req.path}`);
         res.sendFile('index.html', { root: 'client/dist' });
