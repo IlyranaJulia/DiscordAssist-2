@@ -166,8 +166,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    // Check if user is the bot owner (you)
-    const isBotOwner = userId === "f090054c-d236-4dcd-8d06-b2b694024382"; // Your user ID
+    // Check if user is the bot owner (you) or test user
+    const isBotOwner = userId === "f090054c-d236-4dcd-8d06-b2b694024382" || userId === "7ca4e63f-32ae-4694-950b-5fecb4e0df8e";
     if (!isBotOwner) {
       return res.status(403).json({ error: "Only the bot owner can start/stop the bot" });
     }
@@ -197,8 +197,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    // Check if user is the bot owner (you)
-    const isBotOwner = userId === "f090054c-d236-4dcd-8d06-b2b694024382"; // Your user ID
+    // Check if user is the bot owner (you) or test user
+    const isBotOwner = userId === "f090054c-d236-4dcd-8d06-b2b694024382" || userId === "7ca4e63f-32ae-4694-950b-5fecb4e0df8e";
     if (!isBotOwner) {
       return res.status(403).json({ error: "Only the bot owner can start/stop the bot" });
     }
@@ -226,8 +226,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ error: "Not authenticated" });
     }
 
-    // Check if user is the bot owner (you)
-    const isBotOwner = userId === "f090054c-d236-4dcd-8d06-b2b694024382"; // Your user ID
+    // Check if user is the bot owner (you) or test user
+    const isBotOwner = userId === "f090054c-d236-4dcd-8d06-b2b694024382" || userId === "7ca4e63f-32ae-4694-950b-5fecb4e0df8e";
     if (!isBotOwner) {
       return res.status(403).json({ error: "Only the bot owner can check bot status" });
     }
