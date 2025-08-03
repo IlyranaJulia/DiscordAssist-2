@@ -7,7 +7,7 @@ import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Bot, Settings, Server, ExternalLink, Copy } from "lucide-react";
+import { Bot, Settings, Server, ExternalLink, Copy, Play, Power } from "lucide-react";
 import { useState } from "react";
 import type { BotConfig } from "@shared/schema";
 
@@ -16,6 +16,8 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [isStartingBot, setIsStartingBot] = useState(false);
+  const [botStatus, setBotStatus] = useState<'offline' | 'online' | 'starting'>('offline');
 
   // Redirect if not authenticated
   if (!isAuthenticated) {
@@ -27,7 +29,7 @@ export default function Dashboard() {
     queryKey: ["/api/bot-configs"],
   });
 
-  const { data: inviteData } = useQuery({
+  const { data: inviteData } = useQuery<{ inviteUrl: string; message: string }>({
     queryKey: ["/api/bot/invite"],
     enabled: isAuthenticated,
   });
@@ -37,6 +39,36 @@ export default function Dashboard() {
       await navigator.clipboard.writeText(inviteData.inviteUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const startBot = async () => {
+    setIsStartingBot(true);
+    setBotStatus('starting');
+    
+    try {
+      const response = await fetch('/api/bot/start', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setBotStatus('online');
+        alert('Bot started successfully! The bot should now be online in your Discord server.');
+      } else {
+        setBotStatus('offline');
+        alert('Failed to start bot: ' + (data.message || 'Unknown error'));
+      }
+    } catch (error) {
+      setBotStatus('offline');
+      alert('Error starting bot: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setIsStartingBot(false);
     }
   };
 
@@ -76,44 +108,74 @@ export default function Dashboard() {
         <CardHeader>
           <CardTitle className="flex items-center">
             <Bot className="mr-2 text-indigo-600 h-5 w-5" />
-            Invite Bot to Your Server
+            Bot Management
           </CardTitle>
         </CardHeader>
         
         <CardContent>
           <div className="space-y-4">
-            <p className="text-muted-foreground">
-              Use the DiscordAssist bot in your server by inviting it with the link below.
-            </p>
-            
-            {inviteData?.inviteUrl && (
-              <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
-                <input
-                  type="text"
-                  value={inviteData.inviteUrl}
-                  readOnly
-                  className="flex-1 bg-transparent text-sm"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={copyInviteLink}
-                  className="flex items-center gap-2"
-                >
-                  <Copy className="h-4 w-4" />
-                  {copied ? "Copied!" : "Copy"}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => window.open(inviteData.inviteUrl, '_blank')}
-                  className="flex items-center gap-2"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Open
-                </Button>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium mb-1">Bot Status</h3>
+                <p className="text-sm text-muted-foreground">
+                  {botStatus === 'online' ? '🟢 Online' : 
+                   botStatus === 'starting' ? '🟡 Starting...' : '🔴 Offline'}
+                </p>
               </div>
-            )}
+              <Button
+                onClick={startBot}
+                disabled={isStartingBot || botStatus === 'online'}
+                className="flex items-center gap-2"
+              >
+                {isStartingBot ? (
+                  <>
+                    <Power className="h-4 w-4 animate-spin" />
+                    Starting...
+                  </>
+                ) : (
+                  <>
+                    <Play className="h-4 w-4" />
+                    Start Bot
+                  </>
+                )}
+              </Button>
+            </div>
+            
+            <div className="border-t pt-4">
+              <h3 className="font-medium mb-2">Invite Bot to Your Server</h3>
+              <p className="text-muted-foreground text-sm mb-3">
+                Use the DiscordAssist bot in your server by inviting it with the link below.
+              </p>
+              
+              {inviteData?.inviteUrl && (
+                <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+                  <input
+                    type="text"
+                    value={inviteData.inviteUrl}
+                    readOnly
+                    className="flex-1 bg-transparent text-sm"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={copyInviteLink}
+                    className="flex items-center gap-2"
+                  >
+                    <Copy className="h-4 w-4" />
+                    {copied ? "Copied!" : "Copy"}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(inviteData.inviteUrl, '_blank')}
+                    className="flex items-center gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Open
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
