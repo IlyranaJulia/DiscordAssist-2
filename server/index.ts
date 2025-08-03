@@ -51,36 +51,48 @@ if (process.env.NODE_ENV === 'development') {
 
 // Start the server
 async function startServer() {
-  // Register API routes first
-  const server = await registerRoutes(app);
-
-  // Serve static files in production (after API routes)
-  if (process.env.NODE_ENV === 'production') {
-    app.use(express.static('client/dist'));
+  try {
+    console.log('🔧 Starting server...');
     
-    // Serve index.html for all remaining routes (SPA routing)
-    app.get('*', (req, res) => {
-      res.sendFile('index.html', { root: 'client/dist' });
-    });
-  } else {
-    // Development: Use Vite dev server
-    const { createServer } = await import('vite');
-    const vite = await createServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
-  }
+    // Register API routes first
+    const server = await registerRoutes(app);
+    console.log('✅ API routes registered');
 
-  // Start server
-  server.listen(PORT, () => {
-    console.log(`🚀 DiscordAssist-2 running on port ${PORT}`);
-    console.log(`📊 Storage type: ${config.storageType}`);
-    console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+    // Serve static files in production (after API routes)
     if (process.env.NODE_ENV === 'production') {
-      console.log(`🌐 Production URL: ${process.env.RAILWAY_PUBLIC_DOMAIN || 'https://your-app.railway.app'}`);
+      console.log('📁 Setting up static file serving...');
+      // Serve static files from the correct build directory
+      app.use(express.static('client/dist'));
+      
+      // Serve index.html for all remaining routes (SPA routing)
+      app.get('*', (req, res) => {
+        console.log(`📄 Serving index.html for route: ${req.path}`);
+        res.sendFile('index.html', { root: 'client/dist' });
+      });
+      console.log('✅ Static file serving configured');
+    } else {
+      // Development: Use Vite dev server
+      const { createServer } = await import('vite');
+      const vite = await createServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
     }
-  });
+
+    // Start server
+    server.listen(PORT, () => {
+      console.log(`🚀 DiscordAssist-2 running on port ${PORT}`);
+      console.log(`📊 Storage type: ${config.storageType}`);
+      console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+      if (process.env.NODE_ENV === 'production') {
+        console.log(`🌐 Production URL: ${process.env.RAILWAY_PUBLIC_DOMAIN || 'https://your-app.railway.app'}`);
+      }
+    });
+  } catch (error) {
+    console.error('❌ Server startup error:', error);
+    process.exit(1);
+  }
 }
 
 startServer().catch(console.error);
