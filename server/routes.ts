@@ -593,6 +593,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test endpoint to check if POST routes are working
+  app.post("/api/test-post", (req, res) => {
+    res.json({ success: true, message: "POST endpoint working" });
+  });
+
   // Bot invite link - Users can get the invite link for the bot
   app.get("/api/bot/invite", async (req, res) => {
     const userId = req.session?.userId;
