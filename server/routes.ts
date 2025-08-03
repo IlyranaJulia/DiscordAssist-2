@@ -556,6 +556,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Start bot endpoint
+  app.post("/api/bot/start", async (req, res) => {
+    const userId = req.session?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+
+    try {
+      // Import the bot manager
+      const { botManager } = await import('./discord-bot');
+      
+      // Start the main bot
+      const success = await botManager.startBot("main-bot");
+      
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: "Bot started successfully",
+          status: "online"
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "Failed to start bot",
+          status: "offline"
+        });
+      }
+    } catch (error) {
+      console.error("Error starting bot:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Error starting bot",
+        error: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Bot invite link - Users can get the invite link for the bot
   app.get("/api/bot/invite", async (req, res) => {
     const userId = req.session?.userId;

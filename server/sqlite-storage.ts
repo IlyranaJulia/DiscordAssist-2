@@ -202,15 +202,15 @@ export class SQLiteStorage {
       insertConfig.userId,
       insertConfig.guildId,
       insertConfig.guildName,
-      insertConfig.botName,
-      insertConfig.aiModel,
-      insertConfig.systemPrompt,
-      insertConfig.policyContent,
+      insertConfig.botName || null,
+      insertConfig.aiModel || null,
+      insertConfig.systemPrompt || null,
+      insertConfig.policyContent || null,
       JSON.stringify(insertConfig.allowedChannels || []),
       JSON.stringify(insertConfig.allowedRoles || []),
-      insertConfig.adminOnly,
-      insertConfig.isActive,
-      insertConfig.faissIndexPath
+      insertConfig.adminOnly || false,
+      insertConfig.isActive || false,
+      insertConfig.faissIndexPath || null
     );
     
     return this.getBotConfig(id)!;
